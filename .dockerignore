@@ -1,0 +1,42 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Training data (regenerate inside container)
+assets/training/*/
+
+# Models (will be generated)
+models/
+
+# Test outputs
+*.png
+*.jpg
+!assets/*.png
+!assets/*.jpg
+
+# Misc
+*.log
+*.bak
+*.tmp
+README.md
