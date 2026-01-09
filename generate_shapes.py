@@ -24,49 +24,24 @@ def filled_circle(img: np.ndarray, cx: int, cy: int, size: int, **kwargs) -> np.
     return img
 
 
-def filled_square(img: np.ndarray, cx: int, cy: int, size: int, rotation: float = 0, **kwargs) -> np.ndarray:
-    """Draw a filled square with optional rotation."""
+def filled_square(img: np.ndarray, cx: int, cy: int, size: int, **kwargs) -> np.ndarray:
+    """Draw a filled square (no rotation - axis aligned)."""
     half = size // 2
-    pts = np.array([
-        [-half, -half],
-        [half, -half],
-        [half, half],
-        [-half, half],
-    ], dtype=np.float32)
-    
-    # Rotate
-    if rotation != 0:
-        cos_r, sin_r = math.cos(rotation), math.sin(rotation)
-        rot_matrix = np.array([[cos_r, -sin_r], [sin_r, cos_r]])
-        pts = pts @ rot_matrix.T
-    
-    # Translate to center
-    pts = pts + np.array([cx, cy])
-    pts = pts.astype(np.int32)
-    
-    cv2.fillPoly(img, [pts], 0)
+    top_left = (cx - half, cy - half)
+    bottom_right = (cx + half, cy + half)
+    cv2.rectangle(img, top_left, bottom_right, 0, -1)
     return img
 
 
-def filled_triangle(img: np.ndarray, cx: int, cy: int, size: int, rotation: float = 0, **kwargs) -> np.ndarray:
-    """Draw a filled equilateral triangle with optional rotation."""
-    # Equilateral triangle vertices (pointing up)
+def filled_triangle(img: np.ndarray, cx: int, cy: int, size: int, **kwargs) -> np.ndarray:
+    """Draw a filled equilateral triangle with horizontal base at bottom."""
+    # Equilateral triangle vertices (pointing up, flat bottom)
     h = size * math.sqrt(3) / 2
     pts = np.array([
-        [0, -h * 2/3],
-        [-size/2, h * 1/3],
-        [size/2, h * 1/3],
-    ], dtype=np.float32)
-    
-    # Rotate
-    if rotation != 0:
-        cos_r, sin_r = math.cos(rotation), math.sin(rotation)
-        rot_matrix = np.array([[cos_r, -sin_r], [sin_r, cos_r]])
-        pts = pts @ rot_matrix.T
-    
-    # Translate to center
-    pts = pts + np.array([cx, cy])
-    pts = pts.astype(np.int32)
+        [cx, cy - int(h * 2/3)],           # Top vertex
+        [cx - size//2, cy + int(h * 1/3)], # Bottom left
+        [cx + size//2, cy + int(h * 1/3)], # Bottom right
+    ], dtype=np.int32)
     
     cv2.fillPoly(img, [pts], 0)
     return img
@@ -81,55 +56,30 @@ def ring(img: np.ndarray, cx: int, cy: int, size: int, thickness: int = None, **
     return img
 
 
-def frame(img: np.ndarray, cx: int, cy: int, size: int, rotation: float = 0, thickness: int = None, **kwargs) -> np.ndarray:
-    """Draw a frame (outline square) with optional rotation."""
+def frame(img: np.ndarray, cx: int, cy: int, size: int, thickness: int = None, **kwargs) -> np.ndarray:
+    """Draw a frame (outline square, no rotation - axis aligned)."""
     if thickness is None:
         thickness = max(2, size // 8)
     
     half = size // 2
-    pts = np.array([
-        [-half, -half],
-        [half, -half],
-        [half, half],
-        [-half, half],
-    ], dtype=np.float32)
-    
-    # Rotate
-    if rotation != 0:
-        cos_r, sin_r = math.cos(rotation), math.sin(rotation)
-        rot_matrix = np.array([[cos_r, -sin_r], [sin_r, cos_r]])
-        pts = pts @ rot_matrix.T
-    
-    # Translate to center
-    pts = pts + np.array([cx, cy])
-    pts = pts.astype(np.int32)
-    
-    cv2.polylines(img, [pts], True, 0, thickness)
+    top_left = (cx - half, cy - half)
+    bottom_right = (cx + half, cy + half)
+    cv2.rectangle(img, top_left, bottom_right, 0, thickness)
     return img
 
 
-def delta(img: np.ndarray, cx: int, cy: int, size: int, rotation: float = 0, thickness: int = None, **kwargs) -> np.ndarray:
-    """Draw a delta (outline triangle) with optional rotation."""
+def delta(img: np.ndarray, cx: int, cy: int, size: int, thickness: int = None, **kwargs) -> np.ndarray:
+    """Draw a delta (outline triangle) with horizontal base at bottom."""
     if thickness is None:
         thickness = max(2, size // 8)
     
-    # Equilateral triangle vertices (pointing up)
+    # Equilateral triangle vertices (pointing up, flat bottom)
     h = size * math.sqrt(3) / 2
     pts = np.array([
-        [0, -h * 2/3],
-        [-size/2, h * 1/3],
-        [size/2, h * 1/3],
-    ], dtype=np.float32)
-    
-    # Rotate
-    if rotation != 0:
-        cos_r, sin_r = math.cos(rotation), math.sin(rotation)
-        rot_matrix = np.array([[cos_r, -sin_r], [sin_r, cos_r]])
-        pts = pts @ rot_matrix.T
-    
-    # Translate to center
-    pts = pts + np.array([cx, cy])
-    pts = pts.astype(np.int32)
+        [cx, cy - int(h * 2/3)],           # Top vertex
+        [cx - size//2, cy + int(h * 1/3)], # Bottom left
+        [cx + size//2, cy + int(h * 1/3)], # Bottom right
+    ], dtype=np.int32)
     
     cv2.polylines(img, [pts], True, 0, thickness)
     return img
@@ -137,42 +87,42 @@ def delta(img: np.ndarray, cx: int, cy: int, size: int, rotation: float = 0, thi
 
 # Shape registry
 SHAPES = {
-    "filled_circle": {"func": filled_circle, "difficulty": "easy", "can_rotate": False},
-    "filled_square": {"func": filled_square, "difficulty": "easy", "can_rotate": True},
-    "filled_triangle": {"func": filled_triangle, "difficulty": "easy", "can_rotate": True},
-    "ring": {"func": ring, "difficulty": "medium", "can_rotate": False},
-    "frame": {"func": frame, "difficulty": "medium", "can_rotate": True},
-    "delta": {"func": delta, "difficulty": "medium", "can_rotate": True},
+    "filled_circle": {"func": filled_circle, "difficulty": "easy"},
+    "filled_square": {"func": filled_square, "difficulty": "easy"},
+    "filled_triangle": {"func": filled_triangle, "difficulty": "easy"},
+    "ring": {"func": ring, "difficulty": "medium"},
+    "frame": {"func": frame, "difficulty": "medium"},
+    "delta": {"func": delta, "difficulty": "medium"},
 }
 
 
 def generate_variation(
     shape_func: Callable,
-    can_rotate: bool,
     image_size: int = IMAGE_SIZE,
 ) -> np.ndarray:
     """Generate a single shape variation with random transforms."""
     # Start with white background
     img = np.ones((image_size, image_size), dtype=np.uint8) * 255
     
-    # Random position (keep shape mostly visible)
-    margin = image_size // 4
-    cx = random.randint(margin, image_size - margin)
-    cy = random.randint(margin, image_size - margin)
-    
-    # Random size (30-80% of image)
+    # Random size (30-70% of image to leave room for margins)
     min_size = int(image_size * 0.3)
-    max_size = int(image_size * 0.8)
+    max_size = int(image_size * 0.7)
     size = random.randint(min_size, max_size)
     
-    # Random rotation
-    rotation = random.uniform(0, 2 * math.pi) if can_rotate else 0
+    # Calculate margin needed to keep shape fully in bounds
+    # For triangles, height is size * sqrt(3) / 2, and center is offset
+    # Use conservative margin based on size
+    margin = size // 2 + 4  # Extra padding for outline thickness
+    
+    # Random position (keep shape fully visible)
+    cx = random.randint(margin, image_size - margin)
+    cy = random.randint(margin, image_size - margin)
     
     # Random thickness for outline shapes
     thickness = random.randint(max(2, size // 10), max(3, size // 5))
     
     # Draw shape
-    img = shape_func(img, cx, cy, size, rotation=rotation, thickness=thickness)
+    img = shape_func(img, cx, cy, size, thickness=thickness)
     
     return img
 
@@ -196,7 +146,6 @@ def generate_dataset(output_dir: str, shapes: dict = SHAPES, variations: int = V
         for i in range(variations):
             img = generate_variation(
                 shape_info["func"],
-                shape_info["can_rotate"],
             )
             
             filename = f"{shape_name}_{i:04d}.png"
@@ -253,7 +202,6 @@ def preview_shapes(output_path: str = "shape_preview.png"):
             # Generate shape at cell_size
             img = generate_variation(
                 shape_info["func"],
-                shape_info["can_rotate"],
                 image_size=cell_size,
             )
             

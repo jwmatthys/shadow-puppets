@@ -6,12 +6,14 @@ This is the core visualization that will be used in the game.
 
 import sys
 import time
+import os
 import numpy as np
 import pygame
 import mediapipe as mp
 
 from camera import Camera
 from silhouette import create_processor
+from shape_classifier import ShapeClassifier
 
 
 class SilhouetteDisplay:
@@ -23,25 +25,33 @@ class SilhouetteDisplay:
         height: int = 240,
         fullscreen: bool = False,
         show_fps: bool = True,
+        model_dir: str = "models",
     ):
         self.width = width
         self.height = height
         self.fullscreen = fullscreen
         self.show_fps = show_fps
+        self.model_dir = model_dir
         
         # Components
         self.camera: Camera = None
         self.segmentation = None
         self.processor = None
+        self.classifier: ShapeClassifier = None
         
         # Pygame
         self.screen = None
         self.clock = None
         self.font = None
+        self.font_large = None
         
         # Stats
         self.frame_times = []
         self.fps = 0.0
+        
+        # Classification results
+        self.current_prediction = ""
+        self.current_confidence = 0.0
     
     def setup(self) -> bool:
         """Initialize all components. Returns True on success."""
@@ -65,6 +75,19 @@ class SilhouetteDisplay:
         self.processor = create_processor("default")
         print("  Silhouette processor ready")
         
+        # Shape classifier
+        if os.path.exists(self.model_dir):
+            print("  Loading shape classifier...")
+            try:
+                self.classifier = ShapeClassifier(self.model_dir)
+                print(f"  Classifier ready ({len(self.classifier.class_names)} classes)")
+            except Exception as e:
+                print(f"  Warning: Could not load classifier: {e}")
+                self.classifier = None
+        else:
+            print("  No model found - classifier disabled")
+            self.classifier = None
+        
         # Pygame
         print("  Initializing display...")
         pygame.init()
@@ -87,6 +110,7 @@ class SilhouetteDisplay:
         
         self.clock = pygame.time.Clock()
         self.font = pygame.font.Font(None, 36)
+        self.font_large = pygame.font.Font(None, 48)
         
         print("  Display ready")
         print("Setup complete!\n")
@@ -113,6 +137,22 @@ class SilhouetteDisplay:
             self.height
         )
         
+        # Classify the silhouette
+        if self.classifier is not None and results.segmentation_mask is not None:
+            # Check if there's enough of a silhouette to classify
+            mask = results.segmentation_mask
+            person_pixels = np.sum(mask > 0.5)
+            total_pixels = mask.shape[0] * mask.shape[1]
+            coverage = person_pixels / total_pixels
+            
+            if coverage > 0.05:  # At least 5% coverage
+                pred, conf, _ = self.classifier.predict(silhouette)
+                self.current_prediction = pred
+                self.current_confidence = conf
+            else:
+                self.current_prediction = ""
+                self.current_confidence = 0.0
+        
         return silhouette
     
     def render(self, silhouette: np.ndarray):
@@ -137,6 +177,25 @@ class SilhouetteDisplay:
         if self.show_fps:
             fps_text = self.font.render(f"{self.fps:.0f} FPS", True, (128, 128, 128))
             self.screen.blit(fps_text, (10, 10))
+        
+        # Classification result
+        if self.current_prediction and self.current_confidence > 0.3:
+            # Background bar for text
+            bar_height = 50
+            bar_surface = pygame.Surface((self.display_width, bar_height))
+            bar_surface.fill((40, 40, 40))
+            bar_surface.set_alpha(180)
+            self.screen.blit(bar_surface, (0, self.display_height - bar_height))
+            
+            # Prediction text
+            conf_pct = int(self.current_confidence * 100)
+            pred_text = self.font_large.render(
+                f"{self.current_prediction} ({conf_pct}%)", 
+                True, 
+                (255, 255, 255)
+            )
+            text_rect = pred_text.get_rect(center=(self.display_width // 2, self.display_height - bar_height // 2))
+            self.screen.blit(pred_text, text_rect)
         
         pygame.display.flip()
     
