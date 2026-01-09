@@ -1,0 +1,13 @@
+{
+  "class_names": [
+    "delta",
+    "filled_circle",
+    "filled_square",
+    "filled_triangle",
+    "frame",
+    "ring"
+  ],
+  "input_size": 64,
+  "num_classes": 6,
+  "accuracy": 0.7541666666666667
+}

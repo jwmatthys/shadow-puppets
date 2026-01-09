@@ -24,9 +24,10 @@ models/*.h5
 models/*.pkl
 *.onnx
 
-# Training data
-training_data/
-datasets/
+# Training data (large, regenerate with generate_shapes.py)
+assets/training/*/
+!assets/training/*/metadata.json
+!assets/training/*/preview.png
 
 # Logs
 *.log

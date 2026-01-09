@@ -26,7 +26,9 @@ RUN pip install --no-cache-dir \
     mediapipe==0.10.9 \
     opencv-python-headless==4.8.1.78 \
     pygame==2.5.2 \
-    numpy==1.24.3
+    numpy==1.24.3 \
+    scikit-learn==1.3.2 \
+    joblib==1.3.2
 
 # Set environment variables for display
 ENV PYGAME_HIDE_SUPPORT_PROMPT=1
