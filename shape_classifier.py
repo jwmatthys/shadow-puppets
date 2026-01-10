@@ -44,9 +44,12 @@ def extract_hog_features(image: np.ndarray) -> np.ndarray:
     return features.flatten()
 
 
-def load_training_data(data_dir: str) -> Tuple[np.ndarray, np.ndarray, List[str]]:
+def load_training_data(data_dirs: list) -> Tuple[np.ndarray, np.ndarray, List[str]]:
     """
-    Load training data and extract features.
+    Load training data and extract features from multiple directories.
+    
+    Args:
+        data_dirs: List of directories containing class subdirectories
     
     Returns:
         X: feature array (N, num_features)
@@ -59,31 +62,36 @@ def load_training_data(data_dir: str) -> Tuple[np.ndarray, np.ndarray, List[str]
     labels = []
     class_names = []
     
-    # Find all shape directories
-    for entry in sorted(os.listdir(data_dir)):
-        entry_path = os.path.join(data_dir, entry)
-        if os.path.isdir(entry_path) and not entry.startswith('.'):
-            class_idx = len(class_names)
-            class_names.append(entry)
+    for data_dir in data_dirs:
+        if not os.path.exists(data_dir):
+            print(f"  Skipping {data_dir} (not found)")
+            continue
             
-            count = 0
-            # Load all images in this directory
-            for filename in os.listdir(entry_path):
-                if filename.endswith('.png'):
-                    filepath = os.path.join(entry_path, filename)
-                    
-                    # Load as grayscale
-                    img = cv2.imread(filepath, cv2.IMREAD_GRAYSCALE)
-                    if img is None:
-                        continue
-                    
-                    # Extract features
-                    feat = extract_hog_features(img)
-                    features.append(feat)
-                    labels.append(class_idx)
-                    count += 1
-            
-            print(f"  {entry}: {count} images")
+        # Find all class directories
+        for entry in sorted(os.listdir(data_dir)):
+            entry_path = os.path.join(data_dir, entry)
+            if os.path.isdir(entry_path) and not entry.startswith('.'):
+                class_idx = len(class_names)
+                class_names.append(entry)
+                
+                count = 0
+                # Load all images in this directory
+                for filename in os.listdir(entry_path):
+                    if filename.endswith('.png'):
+                        filepath = os.path.join(entry_path, filename)
+                        
+                        # Load as grayscale
+                        img = cv2.imread(filepath, cv2.IMREAD_GRAYSCALE)
+                        if img is None:
+                            continue
+                        
+                        # Extract features
+                        feat = extract_hog_features(img)
+                        features.append(feat)
+                        labels.append(class_idx)
+                        count += 1
+                
+                print(f"  {entry}: {count} images")
     
     X = np.array(features)
     y = np.array(labels)
@@ -94,7 +102,7 @@ def load_training_data(data_dir: str) -> Tuple[np.ndarray, np.ndarray, List[str]
 
 
 def train_model(
-    data_dir: str,
+    data_dirs: list,
     output_dir: str,
 ):
     """Train the shape classifier and save model."""
@@ -104,7 +112,7 @@ def train_model(
     from sklearn.metrics import accuracy_score, classification_report
     
     # Load data
-    X, y, class_names = load_training_data(data_dir)
+    X, y, class_names = load_training_data(data_dirs)
     
     # Split into train/test
     X_train, X_test, y_train, y_test = train_test_split(
@@ -223,27 +231,30 @@ if __name__ == "__main__":
     print("SHAPE CLASSIFIER TRAINING (scikit-learn)")
     print("=" * 50)
     
-    data_dir = "assets/training/shapes"
+    # Training data directories
+    data_dirs = [
+        "assets/training/shapes",
+        "assets/training/letters",
+    ]
     model_dir = "models"
     
-    if not os.path.exists(data_dir):
-        print(f"ERROR: Training data not found at {data_dir}")
-        print("Run generate_shapes.py first!")
+    # Check what training data exists
+    found_dirs = []
+    for d in data_dirs:
+        if os.path.exists(d):
+            subdirs = [s for s in os.listdir(d) 
+                      if os.path.isdir(os.path.join(d, s)) and not s.startswith('.')]
+            if subdirs:
+                found_dirs.append(d)
+                print(f"\nFound {d}: {subdirs}")
+    
+    if not found_dirs:
+        print("ERROR: No training data found!")
+        print("Run 'make generate' first!")
         sys.exit(1)
-    
-    # Check for training images
-    shape_dirs = [d for d in os.listdir(data_dir) 
-                  if os.path.isdir(os.path.join(data_dir, d)) and not d.startswith('.')]
-    
-    if not shape_dirs:
-        print(f"ERROR: No shape directories found in {data_dir}")
-        print("Run generate_shapes.py first!")
-        sys.exit(1)
-    
-    print(f"\nFound {len(shape_dirs)} shape categories: {shape_dirs}\n")
     
     model, scaler, class_names = train_model(
-        data_dir=data_dir,
+        data_dirs=found_dirs,
         output_dir=model_dir,
     )
     

@@ -51,7 +51,7 @@ def ring(img: np.ndarray, cx: int, cy: int, size: int, thickness: int = None, **
     """Draw a ring (outline circle)."""
     radius = size // 2
     if thickness is None:
-        thickness = max(2, size // 8)
+        thickness = max(4, size // 4)  # Chunkier: was size // 8
     cv2.circle(img, (cx, cy), radius, 0, thickness)
     return img
 
@@ -71,7 +71,7 @@ def frame(img: np.ndarray, cx: int, cy: int, size: int, thickness: int = None, *
 def delta(img: np.ndarray, cx: int, cy: int, size: int, thickness: int = None, **kwargs) -> np.ndarray:
     """Draw a delta (outline triangle) with horizontal base at bottom."""
     if thickness is None:
-        thickness = max(2, size // 8)
+        thickness = max(4, size // 4)  # Chunkier: was size // 8
     
     # Equilateral triangle vertices (pointing up, flat bottom)
     h = size * math.sqrt(3) / 2
@@ -85,13 +85,9 @@ def delta(img: np.ndarray, cx: int, cy: int, size: int, thickness: int = None, *
     return img
 
 
-# Shape registry
+# Shape registry - outline shapes only
 SHAPES = {
-    "filled_circle": {"func": filled_circle, "difficulty": "easy"},
-    "filled_square": {"func": filled_square, "difficulty": "easy"},
-    "filled_triangle": {"func": filled_triangle, "difficulty": "easy"},
     "ring": {"func": ring, "difficulty": "medium"},
-    "frame": {"func": frame, "difficulty": "medium"},
     "delta": {"func": delta, "difficulty": "medium"},
 }
 

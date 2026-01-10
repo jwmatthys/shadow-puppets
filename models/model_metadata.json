@@ -1,13 +1,19 @@
 {
   "class_names": [
     "delta",
-    "filled_circle",
-    "filled_square",
-    "filled_triangle",
-    "frame",
-    "ring"
+    "ring",
+    "letter_A",
+    "letter_C",
+    "letter_E",
+    "letter_L",
+    "letter_M",
+    "letter_S",
+    "letter_T",
+    "letter_V",
+    "letter_X",
+    "letter_Y"
   ],
   "input_size": 64,
-  "num_classes": 6,
-  "accuracy": 0.9166666666666666
+  "num_classes": 12,
+  "accuracy": 0.96875
 }
