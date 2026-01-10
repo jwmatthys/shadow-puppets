@@ -7,7 +7,9 @@ DOCKER_RUN_DISPLAY = docker run --rm -it \
 	--device /dev/dri \
 	--device /dev/video0 \
 	-e DISPLAY=$(DISPLAY) \
+	-e PULSE_SERVER=unix:$(XDG_RUNTIME_DIR)/pulse/native \
 	-v /tmp/.X11-unix:/tmp/.X11-unix \
+	-v $(XDG_RUNTIME_DIR)/pulse/native:$(XDG_RUNTIME_DIR)/pulse/native \
 	-v $(PWD):/app \
 	$(IMAGE_NAME)
 
@@ -47,6 +49,13 @@ benchmark:
 # Training commands
 generate:
 	$(DOCKER_RUN) python generate_shapes.py
+	$(DOCKER_RUN) python generate_letters.py
+
+generate-shapes:
+	$(DOCKER_RUN) python generate_shapes.py
+
+generate-letters:
+	$(DOCKER_RUN) python generate_letters.py
 
 train:
 	$(DOCKER_RUN) python shape_classifier.py
@@ -57,6 +66,7 @@ retrain: clean-training generate train
 # Clean training data (run inside Docker to handle permissions)
 clean-training:
 	$(DOCKER_RUN) rm -rf assets/training/shapes/*/
+	$(DOCKER_RUN) rm -rf assets/training/letters/*/
 
 # Clean models
 clean-models:
@@ -87,9 +97,9 @@ help:
 	@echo "  make test-camera    - Test camera settings"
 	@echo "  make benchmark      - Run performance benchmark"
 	@echo ""
-	@echo "  make generate       - Generate training data"
-	@echo "  make package        - Package training data for Colab upload"
-	@echo "  make train          - Test the classifier"
+	@echo "  make generate       - Generate training data (shapes + letters)"
+	@echo "  make train          - Train the classifier"
+	@echo "  make retrain        - Clean, generate, and train"
 	@echo ""
 	@echo "  make clean-training - Remove training images"
 	@echo "  make clean-models   - Remove trained models"
@@ -98,9 +108,6 @@ help:
 	@echo "  make shell          - Open interactive bash shell"
 	@echo "  make help           - Show this help"
 	@echo ""
-	@echo "Training workflow:"
-	@echo "  1. make generate    - Create training images"
-	@echo "  2. make package     - Create shapes_training_data.zip"
-	@echo "  3. Upload to Colab and run train_colab.ipynb"
-	@echo "  4. Download .tflite and .json to models/"
-	@echo "  5. make run         - Play the game!"
+	@echo "Audio setup:"
+	@echo "  - Put background music in bgm/*.ogg"
+	@echo "  - Put sound effects in sfx/boom.ogg and sfx/bell.ogg"

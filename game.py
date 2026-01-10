@@ -8,6 +8,7 @@ import sys
 import time
 import os
 import random
+import glob
 import numpy as np
 import pygame
 import mediapipe as mp
@@ -23,6 +24,8 @@ WINDOW_HEIGHT = 800
 CAPTURE_WIDTH = 320
 CAPTURE_HEIGHT = 240
 ROUND_DURATION = 30  # seconds
+COUNTDOWN_DURATION = 5  # seconds before round starts
+MATCH_THRESHOLD = 0.25  # minimum match to count as success
 
 # Colors
 WHITE = (255, 255, 255)
@@ -42,7 +45,7 @@ class Game:
         self.model_dir = model_dir
         
         # Game state
-        self.state = "title"  # title, playing, round_end, game_over
+        self.state = "title"  # title, countdown, playing, round_end, game_over
         self.round_number = 0
         self.score = 0
         self.high_score = 0
@@ -50,9 +53,11 @@ class Game:
         # Round state
         self.target_shape = ""
         self.round_start_time = 0
+        self.countdown_start_time = 0
         self.time_remaining = ROUND_DURATION
         self.best_match_this_round = 0.0
         self.match_achieved = False
+        self.success_sound_played = False  # Track if we played the bell this round
         
         # Classification
         self.current_prediction = ""
@@ -78,6 +83,12 @@ class Game:
         self.screen = None
         self.clock = None
         self.fonts = {}
+        
+        # Audio
+        self.bgm_files = []
+        self.previous_bgm = None  # Track last played BGM
+        self.sound_boom = None
+        self.sound_bell = None
         
         # Silhouette surface (for scaling)
         self.silhouette_surface = None
@@ -124,6 +135,17 @@ class Game:
         # Pygame
         print("  Initializing display...")
         pygame.init()
+        
+        # Try to initialize audio (optional - game works without it)
+        self.audio_available = False
+        try:
+            pygame.mixer.init()
+            self.audio_available = True
+            print("  Audio ready")
+        except pygame.error as e:
+            print(f"  Audio not available: {e}")
+            print("  (Game will run without sound)")
+        
         self.screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
         pygame.display.set_caption("Shadow Puppets")
         self.clock = pygame.time.Clock()
@@ -134,12 +156,90 @@ class Game:
             "medium": pygame.font.Font(None, 48),
             "large": pygame.font.Font(None, 72),
             "huge": pygame.font.Font(None, 120),
+            "countdown": pygame.font.Font(None, 200),
         }
         
         print("  Display ready")
+        
+        # Load audio
+        print("  Loading audio...")
+        self._load_audio()
+        
         print("Setup complete!\n")
         
         return True
+    
+    def _load_audio(self):
+        """Load background music and sound effects."""
+        if not self.audio_available:
+            return
+        
+        # Find BGM files
+        bgm_dir = "bgm"
+        if os.path.exists(bgm_dir):
+            self.bgm_files = glob.glob(os.path.join(bgm_dir, "*.ogg"))
+            if self.bgm_files:
+                print(f"    Found {len(self.bgm_files)} background music files")
+            else:
+                print(f"    No .ogg files found in {bgm_dir}/")
+        else:
+            print(f"    BGM directory not found ({bgm_dir}/)")
+        
+        # Load sound effects
+        sfx_dir = "sfx"
+        if os.path.exists(sfx_dir):
+            boom_path = os.path.join(sfx_dir, "boom.ogg")
+            bell_path = os.path.join(sfx_dir, "bell.ogg")
+            
+            if os.path.exists(boom_path):
+                self.sound_boom = pygame.mixer.Sound(boom_path)
+                print(f"    Loaded boom sound")
+            else:
+                print(f"    No boom.ogg found in {sfx_dir}/")
+            
+            if os.path.exists(bell_path):
+                self.sound_bell = pygame.mixer.Sound(bell_path)
+                print(f"    Loaded bell sound")
+            else:
+                print(f"    No bell.ogg found in {sfx_dir}/")
+        else:
+            print(f"    SFX directory not found ({sfx_dir}/)")
+    
+    def _play_random_bgm(self):
+        """Start playing a random background music track (avoiding repeats)."""
+        if not self.audio_available or not self.bgm_files:
+            return
+        
+        # Choose a different track than last time
+        available = [t for t in self.bgm_files if t != self.previous_bgm]
+        if not available:
+            available = self.bgm_files  # Only one track, use it
+        
+        track = random.choice(available)
+        self.previous_bgm = track
+        
+        try:
+            pygame.mixer.music.load(track)
+            pygame.mixer.music.play(-1)  # Loop indefinitely
+            print(f"  Playing: {os.path.basename(track)}")
+        except Exception as e:
+            print(f"  Could not play music: {e}")
+    
+    def _stop_bgm(self):
+        """Stop background music."""
+        if not self.audio_available:
+            return
+        pygame.mixer.music.stop()
+    
+    def _play_boom(self):
+        """Play the boom sound effect."""
+        if self.sound_boom:
+            self.sound_boom.play()
+    
+    def _play_bell(self):
+        """Play the bell/success sound effect."""
+        if self.sound_bell:
+            self.sound_bell.play()
     
     def cleanup(self):
         """Release all resources."""
@@ -147,12 +247,21 @@ class Game:
             self.camera.close()
         if self.segmentation:
             self.segmentation.close()
+        if self.audio_available:
+            pygame.mixer.quit()
         pygame.quit()
     
-    def start_round(self):
-        """Start a new round."""
+    def start_countdown(self):
+        """Start the countdown before a round."""
         self.round_number += 1
         self.target_shape = random.choice(self.classifier.class_names)
+        self.countdown_start_time = time.time()
+        self.state = "countdown"
+        self.success_sound_played = False
+        print(f"Round {self.round_number}: Get ready to make a {self.target_shape}!")
+    
+    def start_round(self):
+        """Start the actual round after countdown."""
         self.round_start_time = time.time()
         self.time_remaining = ROUND_DURATION
         self.best_match_this_round = 0.0
@@ -166,13 +275,20 @@ class Game:
         self.display_target_confidence = 0.0
         self.last_display_update = 0
         
-        print(f"Round {self.round_number}: Make a {self.target_shape}!")
+        # Start music
+        self._play_random_bgm()
+        
+        print(f"  GO! Make a {self.target_shape}!")
     
     def end_round(self):
         """End the current round."""
+        # Stop music and play boom
+        self._stop_bgm()
+        self._play_boom()
+        
         # Award points based on best match
-        if self.best_match_this_round >= 0.25:  # Lowered from 0.7
-            points = int(self.best_match_this_round * 200)  # Scale up points
+        if self.best_match_this_round >= MATCH_THRESHOLD:
+            points = int(self.best_match_this_round * 200)
             self.score += points
             self.match_achieved = True
             print(f"  Match! +{points} points (total: {self.score})")
@@ -217,6 +333,11 @@ class Game:
                 # Track best match this round (use instant value)
                 if self.target_confidence > self.best_match_this_round:
                     self.best_match_this_round = self.target_confidence
+                
+                # Check for success - play bell sound once when threshold reached (only during playing state)
+                if self.state == "playing" and self.target_confidence >= MATCH_THRESHOLD and not self.success_sound_played:
+                    self._play_bell()
+                    self.success_sound_played = True
             else:
                 self.target_confidence = 0.0
         
@@ -297,6 +418,40 @@ class Game:
         start = self.fonts["large"].render("Press SPACE to start", True, GREEN)
         start_rect = start.get_rect(center=(WINDOW_WIDTH // 2, 680))
         self.screen.blit(start, start_rect)
+    
+    def draw_countdown_screen(self):
+        """Draw the countdown screen before round starts."""
+        self.screen.fill(BLACK)
+        
+        # Calculate countdown
+        elapsed = time.time() - self.countdown_start_time
+        remaining = COUNTDOWN_DURATION - elapsed
+        
+        if remaining <= 0:
+            # Countdown finished, start the round
+            self.start_round()
+            return
+        
+        # Round info
+        round_text = self.fonts["large"].render(f"Round {self.round_number}", True, WHITE)
+        round_rect = round_text.get_rect(center=(WINDOW_WIDTH // 2, 200))
+        self.screen.blit(round_text, round_rect)
+        
+        # Target shape
+        target_text = self.fonts["huge"].render(f"{self.target_shape.upper()}", True, YELLOW)
+        target_rect = target_text.get_rect(center=(WINDOW_WIDTH // 2, 350))
+        self.screen.blit(target_text, target_rect)
+        
+        # Countdown number
+        countdown_num = int(remaining) + 1
+        countdown_text = self.fonts["countdown"].render(str(countdown_num), True, WHITE)
+        countdown_rect = countdown_text.get_rect(center=(WINDOW_WIDTH // 2, 550))
+        self.screen.blit(countdown_text, countdown_rect)
+        
+        # "Get Ready" text
+        ready_text = self.fonts["medium"].render("Get Ready!", True, GRAY)
+        ready_rect = ready_text.get_rect(center=(WINDOW_WIDTH // 2, 700))
+        self.screen.blit(ready_text, ready_rect)
     
     def draw_game_screen(self, silhouette: np.ndarray):
         """Draw the main game screen."""
@@ -402,7 +557,7 @@ class Game:
         # Result
         if self.match_achieved:
             result = self.fonts["huge"].render("MATCHED!", True, GREEN)
-            points = int(self.best_match_this_round * 100)
+            points = int(self.best_match_this_round * 200)
             points_text = self.fonts["large"].render(f"+{points} points", True, YELLOW)
         else:
             result = self.fonts["huge"].render("TIME'S UP!", True, RED)
@@ -444,9 +599,9 @@ class Game:
                     if self.state == "title":
                         self.score = 0
                         self.round_number = 0
-                        self.start_round()
+                        self.start_countdown()
                     elif self.state == "round_end":
-                        self.start_round()
+                        self.start_countdown()
         
         return True
     
@@ -481,6 +636,8 @@ class Game:
             # Draw appropriate screen
             if self.state == "title":
                 self.draw_title_screen()
+            elif self.state == "countdown":
+                self.draw_countdown_screen()
             elif self.state == "playing" and silhouette is not None:
                 self.draw_game_screen(silhouette)
             elif self.state == "round_end":
@@ -491,6 +648,9 @@ class Game:
             # FPS
             frame_time = time.time() - frame_start
             self.update_fps(frame_time)
+        
+        # Cleanup audio
+        self._stop_bgm()
         
         print(f"\nFinal score: {self.score}")
         if self.score > 0:
