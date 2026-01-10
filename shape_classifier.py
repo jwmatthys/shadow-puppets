@@ -177,7 +177,7 @@ class ShapeClassifier:
             metadata = json.load(f)
         
         self.class_names = metadata["class_names"]
-        self.input_size = metadata["input_size"]
+        self.input_size = metadata.get("input_size", INPUT_SIZE)
         
         # Load model and scaler
         model_path = os.path.join(self.model_dir, "shape_classifier.joblib")

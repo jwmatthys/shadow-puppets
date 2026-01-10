@@ -171,8 +171,8 @@ class Game:
     def end_round(self):
         """End the current round."""
         # Award points based on best match
-        if self.best_match_this_round >= 0.7:
-            points = int(self.best_match_this_round * 100)
+        if self.best_match_this_round >= 0.25:  # Lowered from 0.7
+            points = int(self.best_match_this_round * 200)  # Scale up points
             self.score += points
             self.match_achieved = True
             print(f"  Match! +{points} points (total: {self.score})")
@@ -351,9 +351,9 @@ class Game:
         
         # Match percentage for target (center) - uses instant value for responsiveness
         match_pct = int(self.target_confidence * 100)
-        if match_pct >= 70:
+        if match_pct >= 30:
             match_color = GREEN
-        elif match_pct >= 40:
+        elif match_pct >= 20:
             match_color = YELLOW
         else:
             match_color = RED

@@ -51,7 +51,7 @@ generate:
 train:
 	$(DOCKER_RUN) python shape_classifier.py
 
-# Clean and regenerate training data, then retrain
+# Clean, generate, and train in one step
 retrain: clean-training generate train
 
 # Clean training data (run inside Docker to handle permissions)
@@ -64,6 +64,10 @@ clean-models:
 
 # Clean everything
 clean: clean-training clean-models
+
+# Fix clock skew issues (timestamps from Docker)
+fix-timestamps:
+	$(DOCKER_RUN) find . -type f -exec touch {} +
 
 # Interactive shell
 shell:
@@ -84,8 +88,8 @@ help:
 	@echo "  make benchmark      - Run performance benchmark"
 	@echo ""
 	@echo "  make generate       - Generate training data"
-	@echo "  make train          - Train the classifier"
-	@echo "  make retrain        - Clean, generate, and train (full rebuild)"
+	@echo "  make package        - Package training data for Colab upload"
+	@echo "  make train          - Test the classifier"
 	@echo ""
 	@echo "  make clean-training - Remove training images"
 	@echo "  make clean-models   - Remove trained models"
@@ -93,3 +97,10 @@ help:
 	@echo ""
 	@echo "  make shell          - Open interactive bash shell"
 	@echo "  make help           - Show this help"
+	@echo ""
+	@echo "Training workflow:"
+	@echo "  1. make generate    - Create training images"
+	@echo "  2. make package     - Create shapes_training_data.zip"
+	@echo "  3. Upload to Colab and run train_colab.ipynb"
+	@echo "  4. Download .tflite and .json to models/"
+	@echo "  5. make run         - Play the game!"
