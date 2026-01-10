@@ -43,6 +43,12 @@ test-smoothing:
 test-camera:
 	$(DOCKER_RUN_DISPLAY) python test_camera.py
 
+test-mobilenet:
+	$(DOCKER_RUN_DISPLAY) python mobilenet_segmentation.py
+
+compare-segmentation:
+	$(DOCKER_RUN_DISPLAY) python compare_segmentation.py
+
 benchmark:
 	$(DOCKER_RUN_DISPLAY) python benchmark.py
 

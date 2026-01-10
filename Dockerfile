@@ -32,6 +32,12 @@ RUN pip install --no-cache-dir \
     scikit-learn==1.3.2 \
     joblib==1.3.2
 
+# Install PyTorch CPU version for MobileNet segmentation
+RUN pip install --no-cache-dir \
+    torch==2.1.0+cpu \
+    torchvision==0.16.0+cpu \
+    --index-url https://download.pytorch.org/whl/cpu
+
 # Set environment variables for display
 ENV PYGAME_HIDE_SUPPORT_PROMPT=1
 ENV SDL_VIDEODRIVER=x11
