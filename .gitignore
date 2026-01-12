@@ -28,6 +28,7 @@ models/*.pkl
 assets/training/*/
 !assets/training/*/metadata.json
 !assets/training/*/preview.png
+*.svg
 
 # Logs
 *.log
