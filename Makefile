@@ -14,7 +14,11 @@ DOCKER_RUN_DISPLAY = docker run --rm -it \
 	$(IMAGE_NAME)
 
 .PHONY: build run game test-display test-mediapipe test-smoothing test-camera \
-        benchmark generate train clean-training clean help
+        benchmark generate train clean-training clean help xhost
+
+# Enable X11 access for Docker (run once after reboot)
+xhost:
+	xhost +local:docker
 
 # Build the Docker image
 build:
