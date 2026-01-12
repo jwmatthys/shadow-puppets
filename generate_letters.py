@@ -15,7 +15,19 @@ IMAGE_SIZE = 64
 VARIATIONS_PER_LETTER = 200
 
 # Letters that are distinct and feasible to form with bodies
-LETTERS = ['A', 'C', 'E', 'L', 'M', 'S', 'T', 'V', 'X', 'Y']
+# Format: (folder_name, display_name)
+LETTERS = [
+    ('letter_A', 'Letter A'),
+    ('letter_C', 'Letter C'),
+    ('letter_E', 'Letter E'),
+    ('letter_L', 'Letter L'),
+    ('letter_M', 'Letter M'),
+    ('letter_S', 'Letter S'),
+    ('letter_T', 'Letter T'),
+    ('letter_V', 'Letter V'),
+    ('letter_X', 'Letter X'),
+    ('letter_Y', 'Letter Y'),
+]
 
 # OpenCV font options for variety
 FONTS = [
@@ -94,27 +106,42 @@ def generate_letter_variation(letter: str, image_size: int = IMAGE_SIZE) -> np.n
 
 def generate_letter_dataset(
     output_dir: str,
-    letters: List[str] = LETTERS,
+    letters: list = LETTERS,
     variations: int = VARIATIONS_PER_LETTER,
 ):
     """Generate complete letter training dataset."""
     os.makedirs(output_dir, exist_ok=True)
     
-    for letter in letters:
-        print(f"Generating {variations} variations of letter {letter}...")
+    # Build metadata for display names
+    metadata = {}
+    
+    for folder_name, display_name in letters:
+        # Extract the actual letter character
+        letter = folder_name.split('_')[1]
         
-        # Use letter_ prefix to distinguish from shape names
-        letter_dir = os.path.join(output_dir, f"letter_{letter}")
+        print(f"Generating {variations} variations of {display_name}...")
+        
+        letter_dir = os.path.join(output_dir, folder_name)
         os.makedirs(letter_dir, exist_ok=True)
         
         for i in range(variations):
             img = generate_letter_variation(letter)
             
-            filename = f"letter_{letter}_{i:04d}.png"
+            filename = f"{folder_name}_{i:04d}.png"
             filepath = os.path.join(letter_dir, filename)
             cv2.imwrite(filepath, img)
         
+        # Store display name mapping
+        metadata[folder_name] = display_name
+        
         print(f"  ✓ Saved to {letter_dir}/")
+    
+    # Save metadata
+    import json
+    meta_path = os.path.join(output_dir, "display_names.json")
+    with open(meta_path, 'w') as f:
+        json.dump(metadata, f, indent=2)
+    print(f"\nSaved display names to {meta_path}")
     
     print(f"\nLetter dataset complete!")
     return letters
@@ -132,7 +159,8 @@ def preview_letters(output_path: str = "letter_preview.png"):
     
     preview = np.ones((height, width), dtype=np.uint8) * 240
     
-    for col, letter in enumerate(LETTERS):
+    for col, (folder_name, display_name) in enumerate(LETTERS):
+        letter = folder_name.split('_')[1]
         x_offset = padding + col * (cell_size + padding)
         
         # Draw label
