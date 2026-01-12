@@ -12,7 +12,7 @@ import pygame
 import mediapipe as mp
 
 from camera import Camera
-from silhouette import create_processor
+from improved_silhouette import create_improved_processor
 from shape_classifier import ShapeClassifier
 
 
@@ -72,7 +72,7 @@ class SilhouetteDisplay:
         print("  MediaPipe ready")
         
         # Silhouette processor
-        self.processor = create_processor("default")
+        self.processor = create_improved_processor("default")
         print("  Silhouette processor ready")
         
         # Shape classifier
@@ -130,11 +130,12 @@ class SilhouetteDisplay:
         # Get segmentation mask
         results = self.segmentation.process(frame_rgb)
         
-        # Create silhouette image
+        # Create silhouette image (pass RGB frame for guided filtering)
         silhouette = self.processor.create_silhouette_image(
             results.segmentation_mask,
             self.width,
-            self.height
+            self.height,
+            guide_frame=frame_rgb
         )
         
         # Classify the silhouette

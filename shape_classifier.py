@@ -148,8 +148,36 @@ def train_model(
     joblib.dump(model, model_path)
     joblib.dump(scaler, scaler_path)
     
+    # Build display names from training data metadata
+    display_names = {}
+    for data_dir in data_dirs:
+        # Check for shapes metadata
+        shapes_meta = os.path.join(data_dir, "metadata.json")
+        if os.path.exists(shapes_meta):
+            with open(shapes_meta, 'r') as f:
+                shapes_data = json.load(f)
+            for shape_name, info in shapes_data.get("shapes", {}).items():
+                if "display_name" in info:
+                    display_names[shape_name] = info["display_name"]
+        
+        # Check for letters metadata
+        letters_meta = os.path.join(data_dir, "display_names.json")
+        if os.path.exists(letters_meta):
+            with open(letters_meta, 'r') as f:
+                letters_data = json.load(f)
+            display_names.update(letters_data)
+    
+    # Generate default display names for any missing
+    for name in class_names:
+        if name not in display_names:
+            if name.startswith("letter_"):
+                display_names[name] = f"Letter {name.split('_')[1]}"
+            else:
+                display_names[name] = name.replace("_", " ").title()
+    
     metadata = {
         "class_names": class_names,
+        "display_names": display_names,
         "input_size": INPUT_SIZE,
         "num_classes": len(class_names),
         "accuracy": float(accuracy),
@@ -173,6 +201,7 @@ class ShapeClassifier:
         self.model = None
         self.scaler = None
         self.class_names = []
+        self.display_names = {}  # Maps class_name -> display_name
         self.input_size = INPUT_SIZE
         
         self._load_model()
@@ -186,6 +215,16 @@ class ShapeClassifier:
         
         self.class_names = metadata["class_names"]
         self.input_size = metadata.get("input_size", INPUT_SIZE)
+        self.display_names = metadata.get("display_names", {})
+        
+        # If no display names in metadata, generate defaults
+        if not self.display_names:
+            for name in self.class_names:
+                # Convert "letter_X" to "Letter X", "ring" to "Ring", etc.
+                if name.startswith("letter_"):
+                    self.display_names[name] = f"Letter {name.split('_')[1]}"
+                else:
+                    self.display_names[name] = name.replace("_", " ").title()
         
         # Load model and scaler
         model_path = os.path.join(self.model_dir, "shape_classifier.joblib")
@@ -193,6 +232,10 @@ class ShapeClassifier:
         
         self.model = joblib.load(model_path)
         self.scaler = joblib.load(scaler_path)
+    
+    def get_display_name(self, class_name: str) -> str:
+        """Get the display name for a class."""
+        return self.display_names.get(class_name, class_name)
     
     def predict(self, silhouette: np.ndarray) -> Tuple[str, float, Dict[str, float]]:
         """

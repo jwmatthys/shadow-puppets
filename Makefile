@@ -49,6 +49,9 @@ test-mobilenet:
 compare-segmentation:
 	$(DOCKER_RUN_DISPLAY) python compare_segmentation.py
 
+compare-silhouette:
+	$(DOCKER_RUN_DISPLAY) python compare_silhouette.py
+
 benchmark:
 	$(DOCKER_RUN_DISPLAY) python benchmark.py
 

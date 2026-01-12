@@ -86,9 +86,10 @@ def delta(img: np.ndarray, cx: int, cy: int, size: int, thickness: int = None, *
 
 
 # Shape registry - outline shapes only
+# Each shape has a function, difficulty, and display_name
 SHAPES = {
-    "ring": {"func": ring, "difficulty": "medium"},
-    "delta": {"func": delta, "difficulty": "medium"},
+    "ring": {"func": ring, "difficulty": "medium", "display_name": "Ring"},
+    "delta": {"func": delta, "difficulty": "medium", "display_name": "Triangle"},
 }
 
 
@@ -150,6 +151,7 @@ def generate_dataset(output_dir: str, shapes: dict = SHAPES, variations: int = V
         
         metadata["shapes"][shape_name] = {
             "difficulty": shape_info["difficulty"],
+            "display_name": shape_info["display_name"],
             "count": variations,
         }
         
