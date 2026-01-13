@@ -22,7 +22,6 @@ Thumbs.db
 models/*.tflite
 models/*.h5
 models/*.pkl
-models/*.joblib
 *.onnx
 
 # Training data (large, regenerate with generate_shapes.py)
