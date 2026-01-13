@@ -17,12 +17,18 @@
     "letter_W",
     "letter_X",
     "letter_Y",
-    "bear",
+    "airplane",
+    "bird",
     "cactus",
     "cat",
     "elephant",
+    "fish",
     "giraffe",
-    "lightning_bolt"
+    "kangaroo",
+    "lightning_bolt",
+    "rabbit",
+    "tree",
+    "violin"
   ],
   "display_names": {
     "ring": "Ring",
@@ -42,14 +48,20 @@
     "letter_W": "Letter W",
     "letter_X": "Letter X",
     "letter_Y": "Letter Y",
+    "airplane": "Airplane",
+    "bird": "Bird",
+    "cactus": "Cactus",
     "cat": "Cat",
     "elephant": "Elephant",
+    "fish": "Fish",
     "giraffe": "Giraffe",
-    "bear": "Bear",
-    "cactus": "Cactus",
-    "lightning_bolt": "Lightning Bolt"
+    "kangaroo": "Kangaroo",
+    "lightning_bolt": "Lightning Bolt",
+    "rabbit": "Rabbit",
+    "tree": "Tree",
+    "violin": "Violin"
   },
   "input_size": 64,
-  "num_classes": 23,
-  "accuracy": 0.9847826086956522
+  "num_classes": 29,
+  "accuracy": 0.993448275862069
 }

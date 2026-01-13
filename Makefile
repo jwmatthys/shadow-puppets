@@ -71,14 +71,19 @@ generate-letters:
 	$(DOCKER_RUN) python generate_letters.py
 
 # Generate training data from images (run from host, not Docker - needs librsvg/imagemagick)
-# Usage: make generate-images SRC=assets/image_sources/elephant OUT=assets/training/svgs
+# Usage: make generate-images SRC=assets/image_sources/elephant OUT=assets/training/custom
 # Supports: SVG, PNG, JPG, TIFF, WebP
 generate-images:
 	@if [ -z "$(SRC)" ] || [ -z "$(OUT)" ]; then \
-		echo "Usage: make generate-images SRC=assets/image_sources/elephant OUT=assets/training/svgs"; \
+		echo "Usage: make generate-images SRC=assets/image_sources/elephant OUT=assets/training/custom"; \
 		exit 1; \
 	fi
 	./augment_images.sh "$(SRC)" "$(OUT)" 500
+
+# Generate training data from ALL image sources
+# Usage: make augment-all [COUNT=500]
+augment-all:
+	./augment_all.sh $(COUNT)
 
 # Fix ownership of files created by Docker (run with sudo if needed)
 fix-permissions:
