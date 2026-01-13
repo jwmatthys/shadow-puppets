@@ -79,6 +79,9 @@ class Game:
         self.match_achieved = False
         self.success_sound_played = False
         
+        # Shape queue (prevents repeats until all shapes used)
+        self.available_shapes = []
+        
         # Classification
         self.current_prediction = ""
         self.current_confidence = 0.0
@@ -372,12 +375,20 @@ class Game:
         self.shapes_completed = 0
         self.game_time_spent = 0
         self.game_time_remaining = GAME_DURATION
+        # Reset shape queue - shuffle all shapes
+        self.available_shapes = list(self.classifier.class_names)
+        random.shuffle(self.available_shapes)
         self._start_game_log()
         self.start_countdown()
     
     def start_countdown(self):
         """Start the countdown before a shape."""
-        self.target_shape = random.choice(self.classifier.class_names)
+        # Pick next shape from queue (refill if empty)
+        if not self.available_shapes:
+            self.available_shapes = list(self.classifier.class_names)
+            random.shuffle(self.available_shapes)
+        
+        self.target_shape = self.available_shapes.pop()
         self.countdown_start_time = time.time()
         self.state = "countdown"
         self.success_sound_played = False

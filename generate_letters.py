@@ -12,19 +12,21 @@ from typing import List
 
 # Output settings
 IMAGE_SIZE = 64
-VARIATIONS_PER_LETTER = 200
+VARIATIONS_PER_LETTER = 500
 
 # Letters that are distinct and feasible to form with bodies
 # Format: (folder_name, display_name)
 LETTERS = [
     ('letter_A', 'Letter A'),
-    ('letter_C', 'Letter C'),
-    ('letter_E', 'Letter E'),
+    ('letter_F', 'Letter F'),
+    ('letter_H', 'Letter H'),
+    ('letter_J', 'Letter J'),
     ('letter_L', 'Letter L'),
     ('letter_M', 'Letter M'),
     ('letter_S', 'Letter S'),
     ('letter_T', 'Letter T'),
     ('letter_V', 'Letter V'),
+    ('letter_W', 'Letter W'),
     ('letter_X', 'Letter X'),
     ('letter_Y', 'Letter Y'),
 ]

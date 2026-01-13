@@ -151,21 +151,12 @@ def train_model(
     # Build display names from training data metadata
     display_names = {}
     for data_dir in data_dirs:
-        # Check for shapes metadata
-        shapes_meta = os.path.join(data_dir, "metadata.json")
-        if os.path.exists(shapes_meta):
-            with open(shapes_meta, 'r') as f:
-                shapes_data = json.load(f)
-            for shape_name, info in shapes_data.get("shapes", {}).items():
-                if "display_name" in info:
-                    display_names[shape_name] = info["display_name"]
-        
-        # Check for letters metadata
-        letters_meta = os.path.join(data_dir, "display_names.json")
-        if os.path.exists(letters_meta):
-            with open(letters_meta, 'r') as f:
-                letters_data = json.load(f)
-            display_names.update(letters_data)
+        # All directories now use display_names.json
+        names_file = os.path.join(data_dir, "display_names.json")
+        if os.path.exists(names_file):
+            with open(names_file, 'r') as f:
+                names_data = json.load(f)
+            display_names.update(names_data)
     
     # Generate default display names for any missing
     for name in class_names:
@@ -278,6 +269,7 @@ if __name__ == "__main__":
     data_dirs = [
         "assets/training/shapes",
         "assets/training/letters",
+        "assets/training/custom",
     ]
     model_dir = "models"
     

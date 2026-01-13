@@ -70,6 +70,20 @@ generate-shapes:
 generate-letters:
 	$(DOCKER_RUN) python generate_letters.py
 
+# Generate training data from images (run from host, not Docker - needs librsvg/imagemagick)
+# Usage: make generate-images SRC=assets/image_sources/elephant OUT=assets/training/svgs
+# Supports: SVG, PNG, JPG, TIFF, WebP
+generate-images:
+	@if [ -z "$(SRC)" ] || [ -z "$(OUT)" ]; then \
+		echo "Usage: make generate-images SRC=assets/image_sources/elephant OUT=assets/training/svgs"; \
+		exit 1; \
+	fi
+	./augment_images.sh "$(SRC)" "$(OUT)" 500
+
+# Fix ownership of files created by Docker (run with sudo if needed)
+fix-permissions:
+	sudo chown -R $(USER):$(USER) assets/ models/ data/ 2>/dev/null || true
+
 train:
 	$(DOCKER_RUN) python shape_classifier.py
 

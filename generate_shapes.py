@@ -14,7 +14,7 @@ from typing import List, Tuple, Callable
 
 # Output settings
 IMAGE_SIZE = 64  # Small for fast training, will resize input to match
-VARIATIONS_PER_SHAPE = 200  # Number of training images per shape
+VARIATIONS_PER_SHAPE = 500  # Number of training images per shape
 
 
 def filled_circle(img: np.ndarray, cx: int, cy: int, size: int, **kwargs) -> np.ndarray:
@@ -85,11 +85,71 @@ def delta(img: np.ndarray, cx: int, cy: int, size: int, thickness: int = None, *
     return img
 
 
-# Shape registry - outline shapes only
-# Each shape has a function, difficulty, and display_name
+def heart(img: np.ndarray, cx: int, cy: int, size: int, thickness: int = None, **kwargs) -> np.ndarray:
+    """Draw a filled heart shape."""
+    # Heart shape using parametric equations
+    points = []
+    for i in range(100):
+        t = i * 2 * math.pi / 100
+        # Parametric heart curve
+        x = 16 * (math.sin(t) ** 3)
+        y = -(13 * math.cos(t) - 5 * math.cos(2*t) - 2 * math.cos(3*t) - math.cos(4*t))
+        # Scale and translate
+        scale = size / 35
+        px = int(cx + x * scale)
+        py = int(cy + y * scale)
+        points.append([px, py])
+    
+    pts = np.array(points, dtype=np.int32)
+    cv2.fillPoly(img, [pts], 0)
+    return img
+
+
+def star(img: np.ndarray, cx: int, cy: int, size: int, thickness: int = None, **kwargs) -> np.ndarray:
+    """Draw a filled 5-pointed star."""
+    # 5-pointed star
+    outer_radius = size // 2
+    inner_radius = outer_radius * 0.4  # Inner vertices at 40% of outer
+    
+    points = []
+    for i in range(10):
+        # Alternate between outer and inner radius
+        radius = outer_radius if i % 2 == 0 else inner_radius
+        # Start from top (-90 degrees) and go clockwise
+        angle = -math.pi / 2 + i * math.pi / 5
+        x = int(cx + radius * math.cos(angle))
+        y = int(cy + radius * math.sin(angle))
+        points.append([x, y])
+    
+    pts = np.array(points, dtype=np.int32)
+    cv2.fillPoly(img, [pts], 0)
+    return img
+
+
+def moon(img: np.ndarray, cx: int, cy: int, size: int, thickness: int = None, **kwargs) -> np.ndarray:
+    """Draw a filled crescent moon."""
+    radius = size // 2
+    
+    # Create a filled circle, then subtract an offset circle to make crescent
+    # First draw the main circle
+    cv2.circle(img, (cx, cy), radius, 0, -1)
+    
+    # Then draw a white circle offset to the right to "cut out" the crescent
+    inner_offset = int(radius * 0.5)
+    inner_radius = int(radius * 0.85)
+    cv2.circle(img, (cx + inner_offset, cy), inner_radius, 255, -1)
+    
+    return img
+
+
+# Shape registry - filled shapes only
+# Each shape has a function and display_name
 SHAPES = {
-    "ring": {"func": ring, "difficulty": "medium", "display_name": "Ring"},
-    "delta": {"func": delta, "difficulty": "medium", "display_name": "Triangle"},
+    "ring": {"func": ring, "display_name": "Ring"},
+    "delta": {"func": delta, "display_name": "Triangle"},
+    "heart": {"func": heart, "display_name": "Heart"},
+    "star": {"func": star, "display_name": "Star"},
+    "moon": {"func": moon, "display_name": "Moon"},
 }
 
 
@@ -128,11 +188,8 @@ def generate_dataset(output_dir: str, shapes: dict = SHAPES, variations: int = V
     """Generate complete training dataset."""
     os.makedirs(output_dir, exist_ok=True)
     
-    # Create category metadata file
-    metadata = {
-        "category": "shapes",
-        "shapes": {},
-    }
+    # Build display names mapping
+    display_names = {}
     
     for shape_name, shape_info in shapes.items():
         print(f"Generating {variations} variations of {shape_name}...")
@@ -149,22 +206,18 @@ def generate_dataset(output_dir: str, shapes: dict = SHAPES, variations: int = V
             filepath = os.path.join(shape_dir, filename)
             cv2.imwrite(filepath, img)
         
-        metadata["shapes"][shape_name] = {
-            "difficulty": shape_info["difficulty"],
-            "display_name": shape_info["display_name"],
-            "count": variations,
-        }
+        display_names[shape_name] = shape_info["display_name"]
         
         print(f"  ✓ Saved to {shape_dir}/")
     
-    # Save metadata
+    # Save display names (same format as letters and svgs)
     import json
-    meta_path = os.path.join(output_dir, "metadata.json")
+    meta_path = os.path.join(output_dir, "display_names.json")
     with open(meta_path, "w") as f:
-        json.dump(metadata, f, indent=2)
+        json.dump(display_names, f, indent=2)
     
-    print(f"\nDataset complete! Metadata saved to {meta_path}")
-    return metadata
+    print(f"\nDataset complete! Display names saved to {meta_path}")
+    return display_names
 
 
 def preview_shapes(output_path: str = "shape_preview.png"):

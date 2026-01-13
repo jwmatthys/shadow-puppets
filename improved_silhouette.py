@@ -271,6 +271,14 @@ IMPROVED_PRESETS = {
         "min_contour_area": 200,
         "denoise_strength": 1,
     },
+    "group": {
+        "threshold": 0.4,       # Lower threshold catches more edge pixels
+        "guided_radius": 12,    # Larger radius smooths gaps between people
+        "guided_eps": 0.02,     # Slightly more smoothing
+        "temporal_alpha": 0.5,  # More temporal smoothing for stability
+        "min_contour_area": 500,  # Ignore small fragments
+        "denoise_strength": 5,
+    },
     "raw": {
         "threshold": 0.5,
         "guided_radius": 0,  # No guided filter
