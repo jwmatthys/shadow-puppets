@@ -2,11 +2,16 @@
 # Simplifies common Docker commands
 
 IMAGE_NAME = shadow-puppets
+
+# Camera device (default: 0, override with: make game CAMERA=2)
+CAMERA ?= 0
+
 DOCKER_RUN = docker run --rm -it -v $(PWD):/app $(IMAGE_NAME)
 DOCKER_RUN_DISPLAY = docker run --rm -it \
 	--device /dev/dri \
-	--device /dev/video0 \
+	--device /dev/video$(CAMERA) \
 	-e DISPLAY=$(DISPLAY) \
+	-e CAMERA_DEVICE=$(CAMERA) \
 	-e PULSE_SERVER=unix:$(XDG_RUNTIME_DIR)/pulse/native \
 	-v /tmp/.X11-unix:/tmp/.X11-unix \
 	-v $(XDG_RUNTIME_DIR)/pulse/native:$(XDG_RUNTIME_DIR)/pulse/native \
@@ -28,10 +33,12 @@ build:
 run: game
 
 game:
+	@echo "Using camera: /dev/video$(CAMERA)"
 	$(DOCKER_RUN_DISPLAY) python game.py
 
 # Run live silhouette display
 live:
+	@echo "Using camera: /dev/video$(CAMERA)"
 	$(DOCKER_RUN_DISPLAY) python live_silhouette.py
 
 # Test commands
@@ -39,24 +46,31 @@ test-display:
 	$(DOCKER_RUN_DISPLAY) python test_display.py
 
 test-mediapipe:
+	@echo "Using camera: /dev/video$(CAMERA)"
 	$(DOCKER_RUN_DISPLAY) python test_mediapipe.py
 
 test-smoothing:
+	@echo "Using camera: /dev/video$(CAMERA)"
 	$(DOCKER_RUN_DISPLAY) python test_smoothing.py
 
 test-camera:
+	@echo "Using camera: /dev/video$(CAMERA)"
 	$(DOCKER_RUN_DISPLAY) python test_camera.py
 
 test-mobilenet:
+	@echo "Using camera: /dev/video$(CAMERA)"
 	$(DOCKER_RUN_DISPLAY) python mobilenet_segmentation.py
 
 compare-segmentation:
+	@echo "Using camera: /dev/video$(CAMERA)"
 	$(DOCKER_RUN_DISPLAY) python compare_segmentation.py
 
 compare-silhouette:
+	@echo "Using camera: /dev/video$(CAMERA)"
 	$(DOCKER_RUN_DISPLAY) python compare_silhouette.py
 
 benchmark:
+	@echo "Using camera: /dev/video$(CAMERA)"
 	$(DOCKER_RUN_DISPLAY) python benchmark.py
 
 # Training commands
@@ -113,6 +127,7 @@ fix-timestamps:
 
 # Interactive shell
 shell:
+	@echo "Using camera: /dev/video$(CAMERA)"
 	$(DOCKER_RUN_DISPLAY) bash
 
 # Help
@@ -122,6 +137,11 @@ help:
 	@echo "  make build          - Build the Docker image"
 	@echo "  make run / game     - Run the main game"
 	@echo "  make live           - Run live silhouette display"
+	@echo ""
+	@echo "CAMERA SELECTION:"
+	@echo "  make game           - Use default camera (/dev/video0)"
+	@echo "  make game CAMERA=2  - Use /dev/video2 (USB camera)"
+	@echo "  make live CAMERA=1  - Use /dev/video1"
 	@echo ""
 	@echo "  make test-display   - Test Pygame display"
 	@echo "  make test-mediapipe - Test MediaPipe segmentation"

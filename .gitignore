@@ -47,3 +47,4 @@ test_output/
 # Misc
 *.bak
 *.tmp
+data/high_score.txt

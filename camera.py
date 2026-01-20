@@ -5,7 +5,7 @@ Camera capture module optimized for Shadow Puppets.
 
 import cv2
 import numpy as np
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 
 class Camera:
@@ -13,7 +13,7 @@ class Camera:
     
     def __init__(
         self,
-        device: int = 0,
+        device: Union[int, str] = 0,
         width: int = 320,
         height: int = 240,
         flip_horizontal: bool = True,
@@ -22,7 +22,7 @@ class Camera:
         Initialize camera.
         
         Args:
-            device: Camera device index (usually 0)
+            device: Camera device index (e.g., 0, 2) or device path (e.g., '/dev/video2')
             width: Desired capture width
             height: Desired capture height
             flip_horizontal: Mirror the image (natural for facing camera)

@@ -33,6 +33,9 @@ MATCH_THRESHOLD = 0.4  # minimum match to count as success
 MATCH_DELAY = 2.0  # seconds before match can trigger after shape starts
 AUTO_CAPTURE_ON_MATCH = True  # automatically save silhouette when match threshold is reached
 
+# Camera device - can be overridden with CAMERA_DEVICE environment variable
+CAMERA_DEVICE = int(os.environ.get('CAMERA_DEVICE', '0'))
+
 # File paths
 HIGH_SCORE_FILE = "data/high_score.txt"
 LOG_DIR = "data/logs"
@@ -133,10 +136,10 @@ class Game:
         print("Setting up Shadow Puppets...")
         
         # Camera
-        print("  Opening camera...")
-        self.camera = Camera(width=CAPTURE_WIDTH, height=CAPTURE_HEIGHT)
+        print(f"  Opening camera (device={CAMERA_DEVICE})...")
+        self.camera = Camera(device=CAMERA_DEVICE, width=CAPTURE_WIDTH, height=CAPTURE_HEIGHT)
         if not self.camera.open():
-            print("  ERROR: Could not open camera")
+            print(f"  ERROR: Could not open camera device {CAMERA_DEVICE}")
             return False
         print(f"  Camera ready")
         
