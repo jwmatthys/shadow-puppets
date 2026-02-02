@@ -308,4 +308,4 @@ if __name__ == "__main__":
         output_dir=model_dir,
     )
     
-    print("\n Training complete!")
+    print("\nTraining complete!")
