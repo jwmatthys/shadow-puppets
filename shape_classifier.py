@@ -32,6 +32,21 @@ def extract_hog_features(image: np.ndarray) -> np.ndarray:
     if len(image.shape) == 3:
         image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     
+    # Add 2-pixel white border to match training data expectations
+    # Real silhouettes from camera often touch the bottom edge, but training
+    # data typically has padding. This border helps the classifier by making
+    # the input match training distribution.
+    border_width = 2
+    image = cv2.copyMakeBorder(
+        image, 
+        border_width, border_width, border_width, border_width,
+        cv2.BORDER_CONSTANT, 
+        value=255  # White border (background color)
+    )
+    
+    # Resize back to INPUT_SIZE (border added 4 pixels in each dimension)
+    image = cv2.resize(image, (INPUT_SIZE, INPUT_SIZE))
+    
     # Compute HOG features
     win_size = (INPUT_SIZE, INPUT_SIZE)
     cell_size = (HOG_CELL_SIZE, HOG_CELL_SIZE)
@@ -293,4 +308,4 @@ if __name__ == "__main__":
         output_dir=model_dir,
     )
     
-    print("\n✓ Training complete!")
+    print("\nâœ“ Training complete!")
