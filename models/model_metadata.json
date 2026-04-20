@@ -69,5 +69,5 @@
   },
   "input_size": 64,
   "num_classes": 32,
-  "accuracy": 0.9840625
+  "accuracy": 0.981875
 }
