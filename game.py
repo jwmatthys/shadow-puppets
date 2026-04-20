@@ -32,6 +32,7 @@ COUNTDOWN_DURATION = 3  # seconds before each shape
 MATCH_THRESHOLD = 0.4  # minimum match to count as success
 MATCH_DELAY = 2.0  # seconds before match can trigger after shape starts
 AUTO_CAPTURE_ON_MATCH = True  # automatically save silhouette when match threshold is reached
+FULLSCREEN = True
 
 # Camera device - can be overridden with CAMERA_DEVICE environment variable
 CAMERA_DEVICE = int(os.environ.get('CAMERA_DEVICE', '0'))
@@ -180,7 +181,16 @@ class Game:
             print(f"  Audio not available: {e}")
             print("  (Game will run without sound)")
         
-        self.screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+        if FULLSCREEN:
+            info = pygame.display.Info()
+            screen_w, screen_h = info.current_w, info.current_h
+            self.screen = pygame.display.set_mode((screen_w, screen_h), pygame.FULLSCREEN)
+            # Update layout constants to match actual screen
+            global WINDOW_WIDTH, WINDOW_HEIGHT
+            WINDOW_WIDTH, WINDOW_HEIGHT = screen_w, screen_h
+        else:
+            self.screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+
         pygame.display.set_caption("Shadow Puppets")
         self.clock = pygame.time.Clock()
         
